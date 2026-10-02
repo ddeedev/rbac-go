@@ -1,6 +1,7 @@
 !README.md
 !.env.example
 build/
+.env
 .env.*
 .DS_Store
 tmp/*
