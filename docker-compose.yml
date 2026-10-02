@@ -1,0 +1,23 @@
+services:
+  backend:
+    container_name: rbac-go
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rbac-go:latest
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      PORT: 5001
+      ## ENV FOR APP_CONFIG
+      MONGO_URI: mongodb://root:root_pass@mongodb:27017/rbac-go?authSource=admin
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5001/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
