@@ -1,0 +1,13 @@
+version: v1
+managed:
+  enabled: false
+plugins:
+  - plugin: go
+    out: ..
+    opt: module=github.com/ddeedev/rbac-go
+  - plugin: go-grpc
+    out: ..
+    opt: module=github.com/ddeedev/rbac-go
+  - plugin: grpc-gateway
+    out: ..
+    opt: module=github.com/ddeedev/rbac-go

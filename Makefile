@@ -1,10 +1,16 @@
-.PHONY: gen-proto serve build
+.PHONY: gen-proto serve build db-up
+
+db-up:
+	docker compose -f docker-compose.db.yml up -d
+
+db-down:
+	docker compose -f docker-compose.db.yml down 
 
 build:
 	go build -o build/apid ./cmd/apid
 
-gen-proto:
-	protoc --proto_path=proto proto/*.proto --go_out=. --go-grpc_out=.
+proto-gen:
+	cd proto && buf generate
 
 serve:
 	go run ./cmd/apid/main.go
