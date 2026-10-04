@@ -8,10 +8,10 @@ import (
 
 // outboud port required for loading data from mongo
 type UserRepository interface {
-	Create(ctx context.Context, u *domain.User) error
+	Create(ctx context.Context, du *domain.User) error
 	GetByID(ctx context.Context, id string) (*domain.User, error)
 	GetByEmail(ctx context.Context, email string) (*domain.User, error)
-	Update(ctx context.Context, u *domain.User) error
+	Update(ctx context.Context, du *domain.User) error
 	Delete(ctx context.Context, id string) error
 }
 
