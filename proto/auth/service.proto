@@ -1,0 +1,29 @@
+syntax = "proto3";
+package auth;
+
+import "google/api/annotations.proto";
+import "user/user.proto";
+
+option go_package = "github.com/ddeedev/rbac-go/x/auth/types";
+
+
+service AuthService {
+
+  rpc Login(LoginRequest) returns (LoginResponse) {
+    option (google.api.http) = {
+      post: "/v1/login"
+      body: "*"
+    };
+  }
+}
+
+message LoginRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string access_token = 1;
+  int32 expires_in = 2;
+  user.User user = 3;
+}

@@ -1,4 +1,4 @@
-package mongo
+package user
 
 import (
 	"context"
@@ -76,5 +76,20 @@ func (u *UserRepo) GetByID(ctx context.Context, id string) (*domain.User, error)
 
 // Update implements [ports.UserRepository].
 func (*UserRepo) Update(ctx context.Context, u *domain.User) error {
+	panic("unimplemented")
+}
+
+// GetAll implements [ports.UserRepository].
+func (u *UserRepo) GetAll(ctx context.Context) ([]*domain.User, error) {
+	panic("unimplemented")
+}
+
+// GetByUsername implements [ports.UserRepository].
+func (u *UserRepo) GetByUsername(ctx context.Context, username string) (*domain.User, error) {
+	panic("unimplemented")
+}
+
+// UpdatePassword implements [ports.UserRepository].
+func (u *UserRepo) UpdatePassword(ctx context.Context, id string, hashedPassword string) error {
 	panic("unimplemented")
 }

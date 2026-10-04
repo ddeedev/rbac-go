@@ -72,9 +72,3 @@ func (u *userService) Delete(ctx context.Context, id string) (*domain.User, erro
 
 	return du, u.repo.Delete(ctx, id)
 }
-
-// TODO:: Move to new module or implemnt here
-// Login implements [ports.UserService].
-func (u *userService) Login(ctx context.Context, email string, password string) (token string, err error) {
-	panic("unimplemented")
-}

@@ -12,8 +12,8 @@ import (
 
 var collection *mongo.Collection
 
-func ConnectToMongoDB() (*mongo.Client, error) {
-	uri, err := appconfig.BuildMongoURI()
+func ConnectToMongoDB(cfc *appconfig.DatabaseConfig) (*mongo.Client, error) {
+	uri, err := appconfig.BuildMongoURI(cfc)
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
