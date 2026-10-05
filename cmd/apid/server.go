@@ -17,6 +17,7 @@ import (
 	"github.com/ddeedev/rbac-go/client"
 	"github.com/ddeedev/rbac-go/config"
 	"github.com/ddeedev/rbac-go/core/service"
+	"github.com/ddeedev/rbac-go/docs"
 	"github.com/ddeedev/rbac-go/middleware"
 	appcrypto "github.com/ddeedev/rbac-go/utils/crypto"
 	"github.com/ddeedev/rbac-go/x/auth"
@@ -181,10 +182,16 @@ func start() error {
 		return err
 	}
 
+	// root must for register swagger
+	// TODO: add heathcheck
+	root := http.NewServeMux()
+	root.Handle("/swagger/", docs.Handler())
+	root.Handle("/", mux)
+
 	httpServer := &http.Server{
-		Addr:              ":" + cfg.Port,
+		Addr: ":" + cfg.Port,
 		// bulti-in log middleware for rest reqeuest
-		Handler:           middleware.LogMiddleware(mux),
+		Handler:           middleware.LogMiddleware(root),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

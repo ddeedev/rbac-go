@@ -1,4 +1,4 @@
-.PHONY: gen-proto serve build db-up db-down protoset
+.PHONY: proto-gen proto-gen-doc proto-gen-set serve build db-up db-down protoset
 
 db-up:
 	docker compose -f docker-compose.db.yml up -d
@@ -12,8 +12,11 @@ build:
 proto-gen:
 	cd proto && buf generate
 
-protoset:
+proto-gen-set:
 	cd proto && buf build -o ../api.protoset
+
+proto-gen-doc:
+	cd proto &&  buf generate --template buf.gen.swagger.yaml
 
 serve:
 	go run ./cmd/apid

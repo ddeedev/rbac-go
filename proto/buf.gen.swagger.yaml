@@ -1,13 +1,14 @@
-# no use yet
 version: v1
 plugins:
   - name: openapiv2
-    out: .
+    out: ../docs
     opt:
       - logtostderr=true
       - openapi_naming_strategy=fqn
       - json_names_for_fields=false
       - generate_unbound_methods=true
       - simple_operation_ids=true
+      # merge every proto into a single spec
+      - allow_merge=true
+      - merge_file_name=apidocs
     strategy: all
-
