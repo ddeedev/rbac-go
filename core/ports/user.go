@@ -7,6 +7,7 @@ import (
 )
 
 // outboud port required for loading data from mongo
+// bind with user_repo adapter
 type UserRepository interface {
 	Create(ctx context.Context, du *domain.User) error
 	GetByID(ctx context.Context, id string) (*domain.User, error)

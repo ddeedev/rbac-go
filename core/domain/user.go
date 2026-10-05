@@ -10,6 +10,7 @@ var (
 	ErrInvalidInput = errors.New("invalid input data")
 	ErrEmailTaken   = errors.New("email alrady in use")
 	ErrInvalidLogin = errors.New("invalid credentials")
+	ErrInvalidToken = errors.New("invalid or expired token")
 )
 
 type User struct {

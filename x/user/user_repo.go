@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/ddeedev/rbac-go/core/domain"
@@ -54,42 +55,128 @@ func NewUserRepo(ctx context.Context, db *mongo.Database) (*UserRepo, error) {
 	return &UserRepo{collection: col}, nil
 }
 
-// Create implements [ports.UserRepository].
-func (*UserRepo) Create(ctx context.Context, u *domain.User) error {
-	panic("unimplemented")
+func objectID(id string) (primitive.ObjectID, error) {
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return primitive.NilObjectID, domain.ErrNotFound
+	}
+	return oid, nil
 }
 
-// Delete implements [ports.UserRepository].
-func (u *UserRepo) Delete(ctx context.Context, id string) error {
-	panic("unimplemented")
+func (r *UserRepo) Create(ctx context.Context, u *domain.User) error {
+	s := userSchema{
+		Name:      u.Name,
+		Email:     u.Email,
+		Password:  u.Password,
+		CreatedAt: u.CreatedAt,
+	}
+	res, err := r.collection.InsertOne(ctx, s)
+	if err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			return domain.ErrEmailTaken
+		}
+		return err
+	}
+	if oid, ok := res.InsertedID.(primitive.ObjectID); ok {
+		u.ID = oid.Hex()
+	}
+	return nil
 }
 
-// GetByEmail implements [ports.UserRepository].
-func (u *UserRepo) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
-	panic("unimplemented")
+func (r *UserRepo) Delete(ctx context.Context, id string) error {
+	oid, err := objectID(id)
+	if err != nil {
+		return err
+	}
+	res, err := r.collection.DeleteOne(ctx, bson.M{"_id": oid})
+	if err != nil {
+		return err
+	}
+	if res.DeletedCount == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
 }
 
-// GetByID implements [ports.UserRepository].
-func (u *UserRepo) GetByID(ctx context.Context, id string) (*domain.User, error) {
-	panic("unimplemented")
+func (r *UserRepo) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
+	return r.findOne(ctx, bson.M{"email": email})
 }
 
-// Update implements [ports.UserRepository].
-func (*UserRepo) Update(ctx context.Context, u *domain.User) error {
-	panic("unimplemented")
+func (r *UserRepo) GetByID(ctx context.Context, id string) (*domain.User, error) {
+	oid, err := objectID(id)
+	if err != nil {
+		return nil, err
+	}
+	return r.findOne(ctx, bson.M{"_id": oid})
+}
+
+func (r *UserRepo) Update(ctx context.Context, u *domain.User) error {
+	oid, err := objectID(u.ID)
+	if err != nil {
+		return err
+	}
+	res, err := r.collection.UpdateOne(ctx, bson.M{"_id": oid},
+		bson.M{"$set": bson.M{"name": u.Name, "email": u.Email}})
+	if err != nil {
+		if mongo.IsDuplicateKeyError(err) {
+			return domain.ErrEmailTaken
+		}
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
 }
 
 // GetAll implements [ports.UserRepository].
-func (u *UserRepo) GetAll(ctx context.Context) ([]*domain.User, error) {
-	panic("unimplemented")
+func (r *UserRepo) GetAll(ctx context.Context) ([]*domain.User, error) {
+	cur, err := r.collection.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+
+	var out []*domain.User
+	for cur.Next(ctx) {
+		var s userSchema
+		if err := cur.Decode(&s); err != nil {
+			return nil, err
+		}
+		out = append(out, s.toDomain())
+	}
+	return out, cur.Err()
 }
 
-// GetByUsername implements [ports.UserRepository].
-func (u *UserRepo) GetByUsername(ctx context.Context, username string) (*domain.User, error) {
-	panic("unimplemented")
+func (r *UserRepo) GetByUsername(ctx context.Context, username string) (*domain.User, error) {
+	return r.GetByEmail(ctx, username)
 }
 
-// UpdatePassword implements [ports.UserRepository].
-func (u *UserRepo) UpdatePassword(ctx context.Context, id string, hashedPassword string) error {
-	panic("unimplemented")
+func (r *UserRepo) UpdatePassword(ctx context.Context, id string, hashedPassword string) error {
+	oid, err := objectID(id)
+	if err != nil {
+		return err
+	}
+	res, err := r.collection.UpdateOne(ctx, bson.M{"_id": oid},
+		bson.M{"$set": bson.M{"password_hash": hashedPassword}})
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount == 0 {
+		return domain.ErrNotFound
+	}
+	return nil
+}
+
+// findOne runs a single-document query and maps a miss to ErrNotFound.
+func (r *UserRepo) findOne(ctx context.Context, filter bson.M) (*domain.User, error) {
+	var s userSchema
+	err := r.collection.FindOne(ctx, filter).Decode(&s)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return nil, domain.ErrNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return s.toDomain(), nil
 }

@@ -7,15 +7,15 @@ import (
 
 	"github.com/ddeedev/rbac-go/core/domain"
 	"github.com/ddeedev/rbac-go/core/ports"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type userService struct {
-	repo ports.UserRepository
+	repo   ports.UserRepository
+	hasher ports.PasswordHasher
 }
 
-func NewUserService(repo ports.UserRepository) ports.UserService {
-	return &userService{repo: repo}
+func NewUserService(repo ports.UserRepository, hasher ports.PasswordHasher) ports.UserService {
+	return &userService{repo: repo, hasher: hasher}
 }
 
 // create user service
@@ -28,13 +28,13 @@ func (u *userService) Create(ctx context.Context, name string, email string, pas
 	}
 
 	// hash user password before store value
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+	hash, err := u.hasher.Hash(password, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	// create domain user
-	du := &domain.User{Name: name, Email: email, Password: string(hash), CreatedAt: time.Now().UTC()}
+	du := &domain.User{Name: name, Email: email, Password: hash, CreatedAt: time.Now().UTC()}
 	if err := u.repo.Create(ctx, du); err != nil {
 		return nil, err
 	}

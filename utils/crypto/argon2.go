@@ -26,7 +26,7 @@ var DefaultConfig = domain.Config{
 // config holds the parameters for Argon2id hashing.
 type hasherImpl struct{}
 
-// cewHasher creates a new hasher
+// creates a new hasher
 // if config is nil it uses DefaultConfig.
 func NewHasher() ports.PasswordHasher {
 	return &hasherImpl{}
@@ -89,5 +89,4 @@ func (h *hasherImpl) Compare(password, encodedHash string) (bool, error) {
 	comparisonHash := argon2.IDKey([]byte(password), salt, c.Iterations, c.Memory, c.Parallelism, c.KeyLength)
 
 	return subtle.ConstantTimeCompare(decodedHash, comparisonHash) == 1, nil
-
 }

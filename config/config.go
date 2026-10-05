@@ -11,12 +11,13 @@ import (
 
 type Config struct {
 	// server
-	Port      string
+	Port      string // HTTP gateway port
+	GRPCPort  string // gRPC server port
 	LogLevel  string
 	LogFormat string
 
 	// db
-	Database     DatabaseConfig
+	Database DatabaseConfig
 
 	// auth and jwt
 	JWTSecret   string
@@ -31,7 +32,7 @@ type DatabaseConfig struct {
 	Name     string
 }
 
-func Load(envFiles ...string)(*Config, error){
+func Load(envFiles ...string) (*Config, error) {
 	files := envFiles
 	if len(files) == 0 {
 		files = []string{".env"}
@@ -39,17 +40,18 @@ func Load(envFiles ...string)(*Config, error){
 	_ = godotenv.Load(files...) // non-fatal; env vars set externally take priority
 
 	cfg := &Config{
-		Port: getEnv("PORT", "5001"),
+		Port:      getEnv("PORT", "5001"),
+		GRPCPort:  getEnv("GRPC_PORT", "50051"),
 		LogLevel:  getEnv("LOG_LEVEL", "info"),
 		LogFormat: getEnv("LOG_FORMAT", "json"),
 		Database: DatabaseConfig{
-			Host: getEnv("MONGO_DB_HOST", "localhost"),
-			Port: getEnvInt("MONGO_DB_PORT", 27017),
+			Host:     getEnv("MONGO_DB_HOST", "localhost"),
+			Port:     getEnvInt("MONGO_DB_PORT", 27017),
 			User:     getEnv("MONGO_DB_USERNAME", "root"),
 			Password: getEnv("MONGO_DB_PASSWORD", "root_pass"),
 			Name:     getEnv("MONGO_DB", "rbac-db"),
 		},
-		JWTSecret: getEnv("JWT_SECRET", "change-me-in-production"),
+		JWTSecret: getEnv("JWT_SECRET", "change-me-in-production-please-set-32b"),
 	}
 
 	// Parse JWT TTL

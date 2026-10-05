@@ -1,13 +1,22 @@
+// core/ports/auth.go
 package ports
 
 import (
+	"context"
 	"time"
 
-	"github.com/ddeedev/rbac-go/x/auth/types"
 	"github.com/ddeedev/rbac-go/core/domain"
 )
 
-type AuthUseCase interface {
-	Login(input types.LoginBody, jwtSecret string, ttl time.Duration) (*types.LoginResponse, error)
-	ValidateToken(tokenString string, jwtSecret string) (*domain.TokenClaims, error)
+// authservice => inbound port used by the gRPC handler and the auth interceptor.
+type AuthService interface {
+	Login(ctx context.Context, email, password string) (*domain.AuthResult, error)
+	ValidateToken(ctx context.Context, token string) (*domain.TokenClaims, error)
 }
+
+// tokenmngr is an outbound port for signing and verifying access tokens.
+type TokenManager interface {
+	Issue(u *domain.User) (token string, expiresIn time.Duration, err error)
+	Verify(token string) (*domain.TokenClaims, error)
+}
+

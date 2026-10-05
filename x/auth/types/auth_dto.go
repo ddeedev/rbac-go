@@ -2,7 +2,7 @@ package types
 
 import "github.com/ddeedev/rbac-go/core/domain"
 
-type LoginBody struct {
+type LoginBodyDTO struct {
 	Username string `json:"username" validate:"required"`
 	Password string `json:"password" validate:"required"`
 }
