@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -42,6 +43,18 @@ func interceptorLogger(l *slog.Logger) logging.Logger {
 	return logging.LoggerFunc(func(ctx context.Context, lvl logging.Level, msg string, fields ...any) {
 		l.Log(ctx, slog.Level(lvl), msg, fields...)
 	})
+}
+
+func Live() http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	}
+}
+
+func writeJSON(w http.ResponseWriter, code int, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	_ = json.NewEncoder(w).Encode(v)
 }
 
 func start() error {
@@ -183,9 +196,12 @@ func start() error {
 	}
 
 	// root must for register swagger
-	// TODO: add heathcheck
 	root := http.NewServeMux()
 	root.Handle("/swagger/", docs.Handler())
+
+	// regisger health check
+	root.HandleFunc("GET /health", Live())
+
 	root.Handle("/", mux)
 
 	httpServer := &http.Server{

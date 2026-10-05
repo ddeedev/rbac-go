@@ -1,16 +1,15 @@
-FROM golang:1.25-bookworm AS builder
-
+FROM golang:1.27-bookworm AS builder
 WORKDIR /app
 
-ADD . /app
+COPY go.mod go.sum ./
+RUN go mod download
 
-RUN go build -o build/apid cmd/apid
+COPY . .
+RUN CGO_ENABLED=0 go build -o /app/build/apid ./cmd/apid
 
 FROM debian:bookworm-slim
+WORKDIR /app
+COPY --from=builder /app/build/apid ./apid
 
-COPY --from=builder app/build/apid .
-
-EXPOSE 5001
-EXPOSE 50051
-
-CMD [ "./apid" ]
+EXPOSE 5001 50051
+CMD ["./apid"]
