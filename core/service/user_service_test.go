@@ -80,7 +80,7 @@ func TestUserServiceUpdateSuccess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if u.Name != "Alie_new" || u.Email != "alice_new@example.com" {
+	if u.Name != "Alice_new" || u.Email != "alice_new@example.com" {
 		t.Errorf("fields not updated: %+v", u)
 	}
 }

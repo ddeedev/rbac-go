@@ -11,8 +11,6 @@ services:
       - "50051:50051"
     environment:
       PORT: 5001
-      ## ENV FOR APP_CONFIG
-      MONGO_URI: mongodb://root:root_pass@mongodb:27017/rbac-go?authSource=admin
 
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:5001/health || exit 1"]
