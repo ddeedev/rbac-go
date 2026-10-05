@@ -30,6 +30,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/reflection"
 )
 
 // publicMethods lists gRPC methods the auth interceptor should let through
@@ -160,6 +161,9 @@ func start() error {
 
 	authtypes.RegisterAuthServiceServer(grpcServer, auth.NewAuthHandler(authSvc))
 	usertypes.RegisterUserServiceServer(grpcServer, user.NewUserHandler(userSvc))
+
+	// expose method on dev
+	reflection.Register(grpcServer)
 
 	// add listener
 	listener, err := net.Listen("tcp", ":"+cfg.GRPCPort)
