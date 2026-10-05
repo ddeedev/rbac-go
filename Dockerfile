@@ -9,6 +9,12 @@ RUN CGO_ENABLED=0 go build -o /app/build/apid ./cmd/apid
 
 FROM debian:bookworm-slim
 WORKDIR /app
+
+# need to use curl cli for health check
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends curl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /app/build/apid ./apid
 
 EXPOSE 5001 50051

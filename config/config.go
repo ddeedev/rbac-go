@@ -25,11 +25,12 @@ type Config struct {
 }
 
 type DatabaseConfig struct {
-	Host     string
-	Port     int
-	User     string
-	Password string
-	Name     string
+	Host       string
+	Port       int
+	User       string
+	Password   string
+	Name       string
+	AuthSource string
 }
 
 func Load(envFiles ...string) (*Config, error) {
@@ -45,11 +46,12 @@ func Load(envFiles ...string) (*Config, error) {
 		LogLevel:  getEnv("LOG_LEVEL", "info"),
 		LogFormat: getEnv("LOG_FORMAT", "json"),
 		Database: DatabaseConfig{
-			Host:     getEnv("MONGO_DB_HOST", "localhost"),
-			Port:     getEnvInt("MONGO_DB_PORT", 27017),
-			User:     getEnv("MONGO_DB_USERNAME", "root"),
-			Password: getEnv("MONGO_DB_PASSWORD", "root_pass"),
-			Name:     getEnv("MONGO_DB", "rbac-db"),
+			Host:       getEnv("MONGO_DB_HOST", "localhost"),
+			Port:       getEnvInt("MONGO_DB_PORT", 27017),
+			User:       getEnv("MONGO_DB_USERNAME", "root"),
+			Password:   getEnv("MONGO_DB_PASSWORD", "root_pass"),
+			Name:       getEnv("MONGO_DB", "rbac-db"),
+			AuthSource: getEnv("MONGO_DB_AUTH_SOURCE", "admin"),
 		},
 		JWTSecret: getEnv("JWT_SECRET", "change-me-in-production-please-set-32b"),
 	}

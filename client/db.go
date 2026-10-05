@@ -2,7 +2,9 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -10,32 +12,25 @@ import (
 	appconfig "github.com/ddeedev/rbac-go/config"
 )
 
-var collection *mongo.Collection
-
 func ConnectToMongoDB(cfc *appconfig.DatabaseConfig) (*mongo.Client, error) {
 	uri, err := appconfig.BuildMongoURI(cfc)
 	if err != nil {
-		log.Fatal(err)
 		return nil, err
 	}
 
-	clientOptions := options.Client().ApplyURI(uri)
-	client, err := mongo.Connect(context.Background(), clientOptions)
+	// bound the initial connect + ping so startup fails fast if Mongo is down.
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
-		log.Fatal(err)
-		return nil, err
+		return nil, fmt.Errorf("mongo connect: %w", err)
 	}
 
-	err = client.Ping(context.Background(), nil)
-	if err != nil {
-		return nil, err
+	if err := client.Ping(ctx, nil); err != nil {
+		return nil, fmt.Errorf("mongo ping: %w", err)
 	}
 
-	log.Println("Conntect to mongo successfully....")
-
+	log.Println("connected to mongo successfully")
 	return client, nil
-}
-
-func GetCollectionPointer() *mongo.Collection {
-	return collection
 }

@@ -24,7 +24,16 @@ func BuildMongoURI(cfg *DatabaseConfig) (string, error) {
 		Scheme: "mongodb",
 		User:   url.UserPassword(user, password),
 		Host:   fmt.Sprintf("%s:%d", host, port),
+		Path:   "/",
 	}
+
+	authSource := cfg.AuthSource
+	if authSource == "" {
+		authSource = "admin"
+	}
+	q := uri.Query()
+	q.Set("authSource", authSource)
+	uri.RawQuery = q.Encode()
 
 	return uri.String(), nil
 }

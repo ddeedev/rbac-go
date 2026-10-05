@@ -1,4 +1,24 @@
 services:
+  mongodb:
+    container_name: mongodb
+    image: mongo:9.0.2
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-rbac-db}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_DB_USERNAME:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_DB_PASSWORD:-root_pass}
+    volumes:
+      - ./db-data:/data/db
+    healthcheck:
+      test:
+        ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
   backend:
     container_name: rbac-go
     build:
@@ -6,17 +26,31 @@ services:
       dockerfile: Dockerfile
     image: rbac-go:latest
     restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
     ports:
       - "5001:5001"
       - "50051:50051"
     environment:
       PORT: 5001
-
+      GRPC_PORT: 50051
+      LOG_LEVEL: info
+      LOG_FORMAT: json
+      MONGO_DB_HOST: mongodb
+      MONGO_DB_PORT: 27017
+      MONGO_DB: rbac-db
+      MONGO_DB_USERNAME: root
+      MONGO_DB_PASSWORD: root_pass
+      MONGO_DB_AUTH_SOURCE: admin
+      JWT_SECRET: change-me-in-production-please-set-32b
+      JWT_TTL: 24h
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:5001/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+
+volumes:
+  mongo-data:
