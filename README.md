@@ -114,7 +114,7 @@ Response:
 
 ```bash
 grpcurl -plaintext \
-  -d '{"username":"ann@example.com","password":"password123"}' \
+  -d '{"username":"alice@example.com","password":"password123"}' \
   localhost:50051 auth.AuthService/Login
 
 ```
@@ -168,7 +168,7 @@ Update user
 Body:
 
 ```json
-{ "id": "string", "name": "string, "email": "string" }
+{ "id": "string", "name": "string", "email": "string" }
 ```
 
 Response:
@@ -367,3 +367,57 @@ Response:
   "createdAt": "string"
 }
 ```
+
+## JWT Guide
+
+I chose "github.com/golang-jwt/jwt/v5" as main dependencies for JWT adapter
+For this POC there is only one type of JWT, which is accessToken and 24h of TTL
+To make it more secure I force JWT secret must not less than 32 letter
+and use that secret to signed with method HMAC-SHA256 (HS256)
+
+In order to verify JWT golang-jwt has method ParseWithClaims for convert string token
+also WithValidMethods and WithExpirationRequired to verify user string token
+
+In order to use JWT, I have auth_middleware to work with grpc endpoints handler
+
+There is two endpoints that user able to access w/o JWT, which are Register and Login
+
+And how to use that you can see above in part of gRPC and RestAPI
+
+## Design Decisions & Assumptions
+
+As recommend and I have some experience with Architecture — Hexagonal (ports & adapters).
+Most of Business logic live in core/ (domain, ports and service), but adapters I decided it to located and module path (x/)
+It make codebase more clean and easy to manage with grpc backend
+
+**Port (interfaces)**
+
+- ports.UserRepository
+- ports.TokenManager
+- ports.PasswordHasher
+
+**Adapter**
+
+- MongoDB (`x/user/user_repo.go`), if there is more collection it will located at `x/new/new_repo.go`
+- GRPC (x/user/user_handler.go)
+- JWT/HS256 (`x/auth/jwt`)
+
+**Utils**
+
+- Argon2id (`utils/crypto`)
+
+**Transport.**
+
+We only have to impelement gRPC server and then RestAPI will be grpc-gateway that transcodes HTTP↔gRPC,
+so there is only one set of validation and auth rules for both of grpc and rest,
+Allow grpc reflection to make grpcurl and swagger able to public access.
+
+**Security**
+
+- **Argon2id** for password hashing (memory-hard; preferred over bcrypt).
+  Minimum password length is 8.
+- **HS256 JWT** with a secret of ≥32 bytes and a positive TTL, enforced at
+  construction.
+- **No user enumeration:** an unknown email and a wrong password both return
+  the same `invalid credentials` error.
+- Passwords are never returned in any response (`json:"-"` on the domain model).
