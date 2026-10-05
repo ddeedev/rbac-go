@@ -13,7 +13,7 @@ proto-gen:
 	cd proto && buf generate
 
 serve:
-	go run ./cmd/apid/main.go
+	go run ./cmd/apid
 
 ## preserve for grpc client
 serve-client:
