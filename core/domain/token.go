@@ -28,6 +28,10 @@ type AuthResult struct {
 	User        *User
 }
 
+type RegisterResult struct {
+	Success bool
+}
+
 // token helper funtion
 type ctxKey struct{}
 
@@ -39,4 +43,3 @@ func ClaimsFromContext(ctx context.Context) (*TokenClaims, bool) {
 	c, ok := ctx.Value(ctxKey{}).(*TokenClaims)
 	return c, ok
 }
-

@@ -19,6 +19,17 @@ type AuthHandler struct {
 
 func NewAuthHandler(svc ports.AuthService) *AuthHandler { return &AuthHandler{svc: svc} }
 
+func (h *AuthHandler) Register(ctx context.Context, req *types.RegisterRequest) (*types.RegisterResponse, error) {
+	_, err := h.svc.Register(ctx, req.Name, req.Email, req.Password)
+	if err != nil {
+		return nil, utils.ToStatus(err)
+	}
+
+	return &types.RegisterResponse{
+		Success: true,
+	}, nil
+}
+
 func (h *AuthHandler) Login(ctx context.Context, req *types.LoginRequest) (*types.LoginResponse, error) {
 	res, err := h.svc.Login(ctx, req.Username, req.Password)
 	if err != nil {

@@ -28,7 +28,8 @@ import (
 // publicMethods lists gRPC methods the auth interceptor should let through
 // without a bearer token.
 var publicMethods = map[string]bool{
-	"/auth.AuthService/Login": true,
+	"/auth.AuthService/Register": true,
+	"/auth.AuthService/Login":    true,
 }
 
 func start() error {

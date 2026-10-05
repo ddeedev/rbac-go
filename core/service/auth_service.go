@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/ddeedev/rbac-go/core/domain"
 	"github.com/ddeedev/rbac-go/core/ports"
@@ -16,6 +17,29 @@ type authService struct {
 
 func NewAuthService(repo ports.UserRepository, hasher ports.PasswordHasher, tokens ports.TokenManager) ports.AuthService {
 	return &authService{repo: repo, hasher: hasher, tokens: tokens}
+}
+
+func (a *authService) Register(ctx context.Context, name string, email string, password string) (*domain.RegisterResult, error) {
+	// validate user email and duplication
+	if _, err := a.repo.GetByEmail(ctx, email); err == nil {
+		return nil, domain.ErrEmailTaken
+	} else if !errors.Is(err, domain.ErrNotFound) {
+		return nil, err
+	}
+
+	// hash user password before store value
+	hash, err := a.hasher.Hash(password, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// create domain user
+	du := &domain.User{Name: name, Email: email, Password: hash, CreatedAt: time.Now().UTC()}
+	if err := a.repo.Create(ctx, du); err != nil {
+		return nil, err
+	}
+
+	return &domain.RegisterResult{Success: true}, nil
 }
 
 // loigin verify credentials and issues an access token.

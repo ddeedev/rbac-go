@@ -10,6 +10,7 @@ import (
 
 // authservice => inbound port used by the gRPC handler and the auth interceptor.
 type AuthService interface {
+	Register(ctx context.Context, name, email, password string) (*domain.RegisterResult, error)
 	Login(ctx context.Context, email, password string) (*domain.AuthResult, error)
 	ValidateToken(ctx context.Context, token string) (*domain.TokenClaims, error)
 }
@@ -19,4 +20,3 @@ type TokenManager interface {
 	Issue(u *domain.User) (token string, expiresIn time.Duration, err error)
 	Verify(token string) (*domain.TokenClaims, error)
 }
-

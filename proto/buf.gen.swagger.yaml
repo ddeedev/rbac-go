@@ -1,0 +1,13 @@
+# no use yet
+version: v1
+plugins:
+  - name: openapiv2
+    out: .
+    opt:
+      - logtostderr=true
+      - openapi_naming_strategy=fqn
+      - json_names_for_fields=false
+      - generate_unbound_methods=true
+      - simple_operation_ids=true
+    strategy: all
+
