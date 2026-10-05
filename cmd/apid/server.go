@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"net"
 	"net/http"
+	"os"
 	"os/signal"
 	"sync"
 	"syscall"
@@ -22,6 +24,7 @@ import (
 	authtypes "github.com/ddeedev/rbac-go/x/auth/types"
 	"github.com/ddeedev/rbac-go/x/user"
 	usertypes "github.com/ddeedev/rbac-go/x/user/types"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -32,6 +35,12 @@ import (
 var publicMethods = map[string]bool{
 	"/auth.AuthService/Register": true,
 	"/auth.AuthService/Login":    true,
+}
+
+func interceptorLogger(l *slog.Logger) logging.Logger {
+	return logging.LoggerFunc(func(ctx context.Context, lvl logging.Level, msg string, fields ...any) {
+		l.Log(ctx, slog.Level(lvl), msg, fields...)
+	})
 }
 
 func start() error {
@@ -45,6 +54,18 @@ func start() error {
 
 	// process clean-up
 	defer stop()
+
+	// logger middleware
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	slog.SetDefault(logger)
+
+	logOpts := []logging.Option{
+		logging.WithLogOnEvents(logging.FinishCall),
+		logging.WithDisableLoggingFields(
+			"protocol", "grpc.component", "grpc.method_type",
+			"grpc.start_time", "peer.address",
+		),
+	}
 
 	// adapters
 	// database conntection
@@ -117,8 +138,12 @@ func start() error {
 
 	// init grpc service
 	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(middleware.AuthMiddleware(authSvc, publicMethods)),
+		grpc.ChainUnaryInterceptor(
+			logging.UnaryServerInterceptor(interceptorLogger(logger), logOpts...),
+			middleware.AuthMiddleware(authSvc, publicMethods),
+		),
 	)
+
 	authtypes.RegisterAuthServiceServer(grpcServer, auth.NewAuthHandler(authSvc))
 	usertypes.RegisterUserServiceServer(grpcServer, user.NewUserHandler(userSvc))
 
@@ -158,7 +183,8 @@ func start() error {
 
 	httpServer := &http.Server{
 		Addr:              ":" + cfg.Port,
-		Handler:           mux,
+		// bulti-in log middleware for rest reqeuest
+		Handler:           middleware.LogMiddleware(mux),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
