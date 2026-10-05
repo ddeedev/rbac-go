@@ -17,6 +17,7 @@ type UserRepository interface {
 	Update(ctx context.Context, du *domain.User) error
 	Delete(ctx context.Context, id string) error
 	UpdatePassword(ctx context.Context, id string, hashedPassword string) error
+	Count(ctx context.Context) (int64, error)
 }
 
 // inbound port served to clietn
@@ -25,4 +26,5 @@ type UserService interface {
 	Get(ctx context.Context, id string) (*domain.User, error)
 	Update(ctx context.Context, id, name, email string) (*domain.User, error)
 	Delete(ctx context.Context, id string) (*domain.User, error)
+	List(ctx context.Context) ([]*domain.User, error)
 }

@@ -8,12 +8,14 @@ import (
 	"net"
 	"net/http"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
 	"github.com/ddeedev/rbac-go/client"
 	"github.com/ddeedev/rbac-go/config"
 	"github.com/ddeedev/rbac-go/core/service"
+	"github.com/ddeedev/rbac-go/middleware"
 	appcrypto "github.com/ddeedev/rbac-go/utils/crypto"
 	"github.com/ddeedev/rbac-go/x/auth"
 	"github.com/ddeedev/rbac-go/x/auth/jwt"
@@ -70,6 +72,38 @@ func start() error {
 		return err
 	}
 
+	// create background worker ctx
+	workerCtx, workerCancel := context.WithCancel(ctx)
+	var wg sync.WaitGroup
+	defer func() {
+		workerCancel()
+		wg.Wait()
+	}()
+
+	// using waitgroup with go routine
+	wg.Go(func() {
+		ticker := time.NewTicker(10 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-workerCtx.Done():
+				return
+			case <-ticker.C:
+				// ticker every 10 secs
+				countCtx, cancel := context.WithTimeout(workerCtx, 10*time.Second)
+				n, err := userRepo.Count(countCtx)
+				cancel()
+				if err != nil {
+					if workerCtx.Err() == nil {
+						log.Printf("user count: %v", err)
+					}
+					continue
+				}
+				log.Printf("total users: %d", n)
+			}
+		}
+	})
+
 	// password and jwt manager
 	hasher := appcrypto.NewHasher()
 	tokenMngr, err := jwt.NewManager(cfg.JWTSecret, cfg.JWTTokenTTL)
@@ -83,7 +117,7 @@ func start() error {
 
 	// init grpc service
 	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(auth.AuthMiddleware(authSvc, publicMethods)),
+		grpc.UnaryInterceptor(middleware.AuthMiddleware(authSvc, publicMethods)),
 	)
 	authtypes.RegisterAuthServiceServer(grpcServer, auth.NewAuthHandler(authSvc))
 	usertypes.RegisterUserServiceServer(grpcServer, user.NewUserHandler(userSvc))

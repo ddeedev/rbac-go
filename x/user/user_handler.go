@@ -52,6 +52,28 @@ func (h *UserHandler) Delete(ctx context.Context, req *types.DeleteUserRequest) 
 	return toResponse(u), nil
 }
 
+func (h *UserHandler) List(ctx context.Context, req *types.ListUserRequest) (*types.ListUserResponse, error) {
+	us, err := h.svc.List(ctx)
+	if err != nil {
+		return nil, utils.ToStatus(err)
+	}
+
+	var res []*types.User
+
+	for _, user := range us {
+		res = append(res, &types.User{
+			Name:      user.Name,
+			Email:     user.Email,
+			Id:        user.ID,
+			CreatedAt: user.CreatedAt.Format(time.RFC3339),
+		})
+	}
+
+	return &types.ListUserResponse{
+		Users: res,
+	}, nil
+}
+
 func toResponse(u *domain.User) *types.UserResponse {
 	return &types.UserResponse{
 		Id:        u.ID,

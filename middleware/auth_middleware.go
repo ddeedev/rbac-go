@@ -1,4 +1,4 @@
-package auth
+package middleware
 
 import (
 	"context"
@@ -15,8 +15,8 @@ import (
 
 func AuthMiddleware(auth ports.AuthService, public map[string]bool) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo,
-		next grpc.UnaryHandler) (any, error) {
-
+		next grpc.UnaryHandler,
+	) (any, error) {
 		if public[info.FullMethod] {
 			return next(ctx, req)
 		}

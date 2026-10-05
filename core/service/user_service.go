@@ -72,3 +72,12 @@ func (u *userService) Delete(ctx context.Context, id string) (*domain.User, erro
 
 	return du, u.repo.Delete(ctx, id)
 }
+
+func (u *userService) List(ctx context.Context) ([]*domain.User, error) {
+	dus, err := u.repo.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return dus, nil
+}

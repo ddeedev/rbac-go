@@ -129,7 +129,6 @@ func (r *UserRepo) Update(ctx context.Context, u *domain.User) error {
 	return nil
 }
 
-// GetAll implements [ports.UserRepository].
 func (r *UserRepo) GetAll(ctx context.Context) ([]*domain.User, error) {
 	cur, err := r.collection.Find(ctx, bson.M{})
 	if err != nil {
@@ -166,6 +165,10 @@ func (r *UserRepo) UpdatePassword(ctx context.Context, id string, hashedPassword
 		return domain.ErrNotFound
 	}
 	return nil
+}
+
+func (r *UserRepo) Count(ctx context.Context) (int64, error) {
+	return r.collection.CountDocuments(ctx, bson.M{})
 }
 
 // findOne runs a single-document query and maps a miss to ErrNotFound.
