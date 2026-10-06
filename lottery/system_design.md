@@ -20,8 +20,9 @@ I choose PostgresDB
 
 1. Client: Frontend Service for user interface
 2. Backend: Search and Allocation Service (holds the positional bitmaps in memory)
-3. PostgreSQL: PostgresDB and Redis
-4. Background Worker: Where cron, schedule process located to reconcile correctness of data
+3. PostgreSQL: Primary datastore for tickets and allocation state
+4. Redis: Holds the positional and `HasAvailable` bitmaps for in-memory candidate matching
+5. Background Worker: Where cron, schedule process located to reconcile correctness of data
 
 ### Control Flow
 
@@ -146,4 +147,3 @@ sequenceDiagram
 ```
 
 ![SequestDiagram](./sequence_diagram.png "Sequence Diagram")
-
