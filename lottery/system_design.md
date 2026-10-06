@@ -106,9 +106,44 @@ Summary of efficiency and tradeoffs. Full breakdown (per-stage complexity, alloc
 
 ## Architecture
 
+```mermaid
+flowchart LR
+    Actor([User])
+    Client[Client]
+    API[API]
+    Backend[Search & Allocation Service]
+    Redis[(Redis<br/>Positional + HasAvailable bitmaps)]
+    PG[(Postgres<br/>Primary Data)]
+    Sweeper[Expiry Sweeper Job]
+
+    Actor --> Client --> API --> Backend
+    Backend -->|BITOP AND digit + HasAvailable| Redis
+    Backend -->|1. Search candidates<br/>2. Reserve + set expiry| PG
+    Sweeper -->|release expired holds| PG
+    Sweeper -->|re-set / clear bits| Redis
+```
+
 ![Architecture](./system_overview.png "System Design")
 
 ## Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant Frontend
+    participant Backend as Backend (Search Service)
+    participant Redis as Redis (bitmap index)
+    participant Postgres
+
+    User->>Frontend: Enter pattern (e.g. 1****5)
+    Frontend->>Backend: POST /search {pattern, user_id}
+    Backend->>Redis: BITOP AND (digit bitmaps + HasAvailable)
+    Redis-->>Backend: Candidate numbers
+    Backend->>Postgres: Claim batch — SELECT ... FOR UPDATE SKIP LOCKED,<br/>SET reserved, reserved_until = now() + TTL (LIMIT N)
+    Postgres-->>Backend: Reserved tickets for this user
+    Backend-->>Frontend: Reserved tickets + expiry time
+    Frontend-->>User: Show tickets with countdown
+```
 
 ![SequestDiagram](./sequence_diagram.png "Sequence Diagram")
 
